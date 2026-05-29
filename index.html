@@ -286,8 +286,8 @@ function makeEnemy(elite){
   g.traverse(function(c){if(c.isMesh){c.castShadow=true;}});
   // Different models have different native orientations - fix each
   if(elite){
-    // Airship: scale 0.01, rotation to face forward
-    g.scale.set(.01,.01,.01);
+    // Airship: scale 0.03 (3x bigger), rotation to face forward
+    g.scale.set(.03,.03,.03);
     g.rotation.set(0, Math.PI, 0);
   }else{
     // Airplane: scale 0.4, rotation to face forward
@@ -505,9 +505,17 @@ function loop(){
     }
   }
 
-  // Powerups vs player
+  // Powerups: auto-attract + pickup
   for(var i=pups.length-1;i>=0;i--){
-    if(pups[i].mesh.position.distanceTo(playerMesh.position)<1.2){
+    var dist = pups[i].mesh.position.distanceTo(playerMesh.position);
+    // Auto-attract when within 4 units
+    if(dist < 4){
+      var dir = new THREE.Vector3().subVectors(playerMesh.position, pups[i].mesh.position).normalize();
+      pups[i].mesh.position.x += dir.x * dt * 8;
+      pups[i].mesh.position.y += dir.y * dt * 8;
+      pups[i].mesh.position.z += dir.z * dt * 8;
+    }
+    if(dist < 1.5){
       var tt=pups[i].type;
       scene.remove(pups[i].mesh);pups.splice(i,1);
       if(tt==='fire')fireLvl=Math.min(fireLvl+1,3);
