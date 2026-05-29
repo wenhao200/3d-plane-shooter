@@ -207,9 +207,9 @@ if(typeof THREE==='undefined'){
       }
     }
 
-    loader.load('models/Jet.glb', function(g){onModelLoaded('jet',g)}, null, function(){modelsToLoad--;if(modelsToLoad<=0)setupGame(models)});
-    loader.load('models/Airplane.glb', function(g){onModelLoaded('airplane',g)}, null, function(){modelsToLoad--;if(modelsToLoad<=0)setupGame(models)});
-    loader.load('models/Airship.glb', function(g){onModelLoaded('airship',g)}, null, function(){modelsToLoad--;if(modelsToLoad<=0)setupGame(models)});
+    loader.load('/3d-plane-shooter/models/Jet.glb', function(g){onModelLoaded('jet',g)}, null, function(){modelsToLoad--;if(modelsToLoad<=0)setupGame(models)});
+    loader.load('/3d-plane-shooter/models/Airplane.glb', function(g){onModelLoaded('airplane',g)}, null, function(){modelsToLoad--;if(modelsToLoad<=0)setupGame(models)});
+    loader.load('/3d-plane-shooter/models/Airship.glb', function(g){onModelLoaded('airship',g)}, null, function(){modelsToLoad--;if(modelsToLoad<=0)setupGame(models)});
 
     function setupGame(m){
       // Check loading result
