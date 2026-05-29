@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+// THREE loaded via global script tag
 
 // ============================================================
 // CONSTANTS
