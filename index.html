@@ -286,15 +286,11 @@ function makeEnemy(elite){
   g.traverse(function(c){if(c.isMesh){c.castShadow=true;}});
   // Different models have different native orientations - fix each
   if(elite){
-    // Airship: 176 unit model, scale 0.03
     g.scale.set(.03,.03,.03);
-    // X 180 flip upright, Y 90 face forward
     g.rotation.set(Math.PI, Math.PI/2, 0);
   }else{
-    // Airplane: 3.77 unit model, scale 0.4  
     g.scale.set(.4,.4,.4);
-    // X 90 lay flat, Y 90 face forward  
-    g.rotation.set(Math.PI/2, Math.PI/2, 0);
+    g.rotation.set(Math.PI, Math.PI/2, 0);
   }
   return g;
 }
