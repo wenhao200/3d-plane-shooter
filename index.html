@@ -270,11 +270,19 @@ if(typeof THREE==='undefined'){
 // ============ GAME OBJECTS ============
 function makeEnemy(elite){
   var src = elite ? window._airshipModel : window._airplaneModel;
-  // Always use fallback for now until we figure out the scale
-  var g=new THREE.Group();
-  var m=new THREE.MeshStandardMaterial({color:elite?0x8B2252:0xE53935,roughness:.4});
-  g.add(new THREE.Mesh(new THREE.ConeGeometry(elite?.5:.25,elite?.6:.3,8).rotateX(-Math.PI/2),m));
-  g.add(new THREE.Mesh(new THREE.BoxGeometry(elite?2.4:1.2,.04,.6),new THREE.MeshStandardMaterial({color:elite?0x6B1540:0xC62828,roughness:.5})));
+  if(!src){
+    var g=new THREE.Group();
+    var m=new THREE.MeshStandardMaterial({color:elite?0x8B2252:0xE53935,roughness:.4});
+    g.add(new THREE.Mesh(new THREE.ConeGeometry(elite?.5:.25,elite?.6:.3,8).rotateX(-Math.PI/2),m));
+    g.add(new THREE.Mesh(new THREE.BoxGeometry(elite?2.4:1.2,.04,.6),new THREE.MeshStandardMaterial({color:elite?0x6B1540:0xC62828,roughness:.5})));
+    g.rotation.x=Math.PI;return g;
+  }
+  var g=src.clone();
+  g.traverse(function(c){if(c.isMesh){c.castShadow=true;}});
+  // Scale to ~1.5 units visible size based on model dimensions
+  // Airplane: 3.77 units base -> scale 0.4, Airship: 176 units base -> scale 0.01
+  if(elite) g.scale.set(.01,.01,.01);
+  else g.scale.set(.4,.4,.4);
   g.rotation.x=Math.PI;
   return g;
 }
