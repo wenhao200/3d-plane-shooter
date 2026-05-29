@@ -284,11 +284,16 @@ function makeEnemy(elite){
   }
   var g=src.clone();
   g.traverse(function(c){if(c.isMesh){c.castShadow=true;}});
-  // Scale to ~1.5 units visible size based on model dimensions
-  // Airplane: 3.77 units base -> scale 0.4, Airship: 176 units base -> scale 0.01
-  if(elite) g.scale.set(.01,.01,.01);
-  else g.scale.set(.4,.4,.4);
-  g.rotation.x=Math.PI;
+  // Different models have different native orientations - fix each
+  if(elite){
+    // Airship: scale 0.01, rotation to face forward
+    g.scale.set(.01,.01,.01);
+    g.rotation.set(0, Math.PI, 0);
+  }else{
+    // Airplane: scale 0.4, rotation to face forward
+    g.scale.set(.4,.4,.4);
+    g.rotation.set(Math.PI/2, Math.PI, 0);
+  }
   return g;
 }
 
