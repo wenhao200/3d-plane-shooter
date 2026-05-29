@@ -279,8 +279,7 @@ function makeEnemy(elite){
   }
   var g=src.clone();
   g.traverse(function(c){if(c.isMesh){c.castShadow=true;}});
-  if(elite) g.scale.set(.06,.06,.06);
-  else g.scale.set(.01,.01,.01);
+  g.scale.set(.2,.2,.2);
   g.rotation.x=Math.PI;
   return g;
 }
