@@ -76,6 +76,29 @@ body {
     text-align: center;
 }
 
+.start-button {
+    display: inline-block;
+    padding: 16px 48px;
+    font-size: clamp(18px, 3vw, 24px);
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #FF6B35, #FF8C00);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 20px rgba(255, 107, 53, 0.4);
+    letter-spacing: 2px;
+    pointer-events: auto;
+}
+.start-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 30px rgba(255, 107, 53, 0.6);
+}
+.start-button:active {
+    transform: scale(0.97);
+}
+
 .start-hint {
     font-size: clamp(18px, 3vw, 24px);
     color: #fff;
