@@ -286,13 +286,15 @@ function makeEnemy(elite){
   g.traverse(function(c){if(c.isMesh){c.castShadow=true;}});
   // Different models have different native orientations - fix each
   if(elite){
-    // Airship: scale 0.03 (3x bigger), rotation to face forward
+    // Airship: 176 unit model, scale 0.03
     g.scale.set(.03,.03,.03);
-    g.rotation.set(0, Math.PI, 0);
+    // Try: rotation.z = Math.PI to flip if upside-down
+    g.rotation.set(0, Math.PI, Math.PI);
   }else{
-    // Airplane: scale 0.4, rotation to face forward
+    // Airplane: 3.77 unit model, scale 0.4
     g.scale.set(.4,.4,.4);
-    g.rotation.set(Math.PI/2, Math.PI, 0);
+    // Try: rotation.y = Math.PI/2 to fix sideways flight
+    g.rotation.set(0, Math.PI/2, 0);
   }
   return g;
 }
