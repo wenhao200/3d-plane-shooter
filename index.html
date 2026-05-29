@@ -198,18 +198,23 @@ if(typeof THREE==='undefined'){
     var models = {};
     var menuText = document.querySelector('#menu .hint');
 
-    function onModelLoaded(key, gltf){
-      models[key] = gltf.scene;
-      modelsToLoad--;
-      menuText.textContent = '加载中... ' + (3-modelsToLoad) + '/3';
-      if(modelsToLoad <= 0){
-        setupGame(models);
-      }
+    function loadModel(key, url){
+      loader.load(url,
+        function(gltf){ models[key]=gltf.scene; console.log(key+' loaded'); checkDone(); },
+        function(ev){ if(ev.lengthComputable)menuText.textContent=key+' '+Math.round(ev.loaded/ev.total*100)+'%'; },
+        function(err){ console.error(key+' failed:',err); checkDone(); }
+      );
     }
 
-    loader.load('/3d-plane-shooter/models/Jet.glb', function(g){onModelLoaded('jet',g)}, null, function(){modelsToLoad--;if(modelsToLoad<=0)setupGame(models)});
-    loader.load('/3d-plane-shooter/models/Airplane.glb', function(g){onModelLoaded('airplane',g)}, null, function(){modelsToLoad--;if(modelsToLoad<=0)setupGame(models)});
-    loader.load('/3d-plane-shooter/models/Airship.glb', function(g){onModelLoaded('airship',g)}, null, function(){modelsToLoad--;if(modelsToLoad<=0)setupGame(models)});
+    function checkDone(){
+      modelsToLoad--;
+      menuText.textContent = '加载中... ' + (3-modelsToLoad) + '/3';
+      if(modelsToLoad <= 0) setupGame(models);
+    }
+
+    loadModel('jet','/3d-plane-shooter/models/Jet.glb');
+    loadModel('airplane','/3d-plane-shooter/models/Airplane.glb');
+    loadModel('airship','/3d-plane-shooter/models/Airship.glb');
 
     function setupGame(m){
       // Check loading result
