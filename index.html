@@ -307,7 +307,7 @@ function makeEnemy(elite){
 }
 
 function addBullet(x,y,z,dx,dy){
-  var m=new THREE.Mesh(new THREE.SphereGeometry(.07,6,6),new THREE.MeshBasicMaterial({color:0xffee44}));
+  var m=new THREE.Mesh(new THREE.SphereGeometry(.12,6,6),new THREE.MeshBasicMaterial({color:0xffee44}));
   m.position.set(x,y,z);scene.add(m);
   bullets.push({mesh:m,vx:dx,vy:dy,vz:-35,life:0});
 }
@@ -477,7 +477,7 @@ function loop(){
   // Collisions: bullets vs enemies
   for(var bi=bullets.length-1;bi>=0;bi--){
     for(var ei=enemies.length-1;ei>=0;ei--){
-      if(bullets[bi].mesh.position.distanceTo(enemies[ei].mesh.position)<(enemies[ei].elite?.8:.5)){
+      if(bullets[bi].mesh.position.distanceTo(enemies[ei].mesh.position)<(enemies[ei].elite?1.5:1.0)){
         scene.remove(bullets[bi].mesh);bullets.splice(bi,1);
         enemies[ei].hp--;
         if(enemies[ei].hp<=0){
