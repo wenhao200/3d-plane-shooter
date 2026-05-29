@@ -1233,22 +1233,53 @@ class Game {
 // ============================================================
 // INPUT HANDLING
 // ============================================================
-document.addEventListener('keydown', (e) => {
-    keys[e.code] = true;
+// Focus the game container on load so keyboard events work
+renderer.domElement.setAttribute('tabindex', '0');
+renderer.domElement.focus();
 
-    if (e.code === 'Space') {
+// Listen on window for best cross-browser support
+function handleKeyDown(e) {
+    const code = e.code;
+    const key = e.key;
+
+    // Track for continuous input (WASD + Space shooting)
+    keys[code] = true;
+
+    // Space = start game / shoot / restart
+    if (code === 'Space' || key === ' ') {
         e.preventDefault();
+        e.stopPropagation();
         if (gameState === State.MENU) {
             game.start();
         } else if (gameState === State.GAME_OVER) {
             game.start();
         }
     }
-});
 
-document.addEventListener('keyup', (e) => {
+    // Prevent default for game keys
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(code)) {
+        e.preventDefault();
+    }
+}
+
+function handleKeyUp(e) {
     keys[e.code] = false;
-});
+}
+
+window.addEventListener('keydown', handleKeyDown);
+window.addEventListener('keyup', handleKeyUp);
+
+// Also support click/tap to start (fix for mobile browsers and some Safari scenarios)
+function handleStartClick() {
+    if (gameState === State.MENU) {
+        game.start();
+    } else if (gameState === State.GAME_OVER) {
+        game.start();
+    }
+}
+
+document.getElementById('menu-screen').addEventListener('click', handleStartClick);
+document.getElementById('gameover-screen').addEventListener('click', handleStartClick);
 
 // ============================================================
 // GAME LOOP
