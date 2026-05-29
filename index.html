@@ -37,7 +37,7 @@ kbd{padding:2px 8px;background:rgba(255,255,255,.15);border:1px solid rgba(255,2
 <div id="menu" class="overlay">
   <h1>✈️ 天空射手</h1>
   <p class="subtitle">3D Plane Shooter</p>
-  <button class="btn" id="btnStart">🎮 开始游戏</button>
+  <button class="btn" id="btnStart" disabled style="opacity:.5">加载中...</button>
   <p class="hint">或按 <kbd>SPACE</kbd></p>
   <div class="info"><p><kbd>W A S D</kbd> 移动 &nbsp; <kbd>SPACE</kbd> 射击</p></div>
 </div>
@@ -63,7 +63,8 @@ kbd{padding:2px 8px;background:rgba(255,255,255,.15);border:1px solid rgba(255,2
 
 <div id="error"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 'use strict';
 
@@ -95,7 +96,7 @@ function updateHUD(){
 // ============ GAME START/RESTART ============
 function startGame(){
   if(typeof THREE==='undefined'){ errorEl.style.display='block';errorEl.textContent='Three.js 加载失败，请刷新重试';return; }
-  if(!scene){ errorEl.style.display='block';errorEl.textContent='场景未初始化，请刷新重试';return; }
+  if(!playerMesh){ errorEl.style.display='block';errorEl.textContent='模型还在加载中，请稍候...';setTimeout(function(){errorEl.style.display='none'},2000);return; }
   cleanupAll();
   score=0;kills=0;gameTime=0;lastSpawn=0;maxFire=1;fireLvl=1;lives=3;
   invincible=true;invTimer=2000;lastShot=0;
@@ -150,7 +151,6 @@ if(typeof THREE==='undefined'){
     renderer = new THREE.WebGLRenderer({canvas:$('c'),antialias:true});
     renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
     renderer.setSize(window.innerWidth,window.innerHeight);
-    renderer.shadowMap.enabled=true;
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0a2e);
@@ -165,11 +165,11 @@ if(typeof THREE==='undefined'){
     };
 
     // Lights
-    scene.add(new THREE.AmbientLight(0x4466aa,.4));
-    var sun=new THREE.DirectionalLight(0xffeedd,1.8);
+    scene.add(new THREE.AmbientLight(0x4466aa,.5));
+    var sun=new THREE.DirectionalLight(0xffeedd,2.0);
     sun.position.set(10,20,10);scene.add(sun);
-    scene.add(new THREE.DirectionalLight(0x88bbff,.4).position.set(-10,5,-10));
-    scene.add(new THREE.DirectionalLight(0x4488ff,.3).position.set(0,-5,-10));
+    scene.add(new THREE.DirectionalLight(0x88bbff,.5).position.set(-10,5,-10));
+    scene.add(new THREE.DirectionalLight(0x4488ff,.4).position.set(0,-5,-10));
 
     // Stars
     var sg=new THREE.BufferGeometry();
@@ -192,116 +192,95 @@ if(typeof THREE==='undefined'){
       scene.add(g);clouds.push({mesh:g,speed:rand(.3,.7)});
     }
 
-    // Player airplane (cute cartoon style)
-    playerMesh = new THREE.Group();
-    var bodyC=0xFF6B35, wingC=0xFFAD33, bellyC=0xFFE082, glassC=0x81D4FA;
-    var bodyMat=new THREE.MeshStandardMaterial({color:bodyC,roughness:.25,metalness:.1});
-    var wingMat=new THREE.MeshStandardMaterial({color:wingC,roughness:.35,metalness:.05});
-    var bellyMat=new THREE.MeshStandardMaterial({color:bellyC,roughness:.4});
+    // Load GLB models
+    var loader = new THREE.GLTFLoader();
+    var modelsToLoad = 3;
+    var models = {};
+    var menuText = document.querySelector('#menu .hint');
 
-    // Fuselage - smooth rounded body
-    var fuseGeo=new THREE.CylinderGeometry(.28,.4,2.0,12).rotateX(Math.PI/2);
-    playerMesh.add(new THREE.Mesh(fuseGeo,bodyMat));
-
-    // Belly (lighter color)
-    var bellyGeo=new THREE.CylinderGeometry(.26,.36,1.4,8,1,false,0,Math.PI).rotateX(Math.PI/2).rotateZ(Math.PI/2);
-    var belly=new THREE.Mesh(bellyGeo,bellyMat);
-    belly.position.set(0,-.22,0);playerMesh.add(belly);
-
-    // Nose cone
-    var nose=new THREE.Mesh(new THREE.ConeGeometry(.28,.5,12).rotateX(Math.PI/2),bodyMat);
-    nose.position.set(0,0,1.2);playerMesh.add(nose);
-
-    // Upper wings (swept back)
-    var upWingGeo=new THREE.BoxGeometry(2.4,.05,.6);
-    var upWing=new THREE.Mesh(upWingGeo,wingMat);
-    upWing.position.set(0,.15,.25);upWing.rotation.z=-.08;playerMesh.add(upWing);
-
-    // Lower wings
-    var loWing=new THREE.Mesh(upWingGeo,wingMat);
-    loWing.position.set(0,-.15,.25);loWing.rotation.z=.08;playerMesh.add(loWing);
-
-    // Wing tips (decorative)
-    var tipMat=new THREE.MeshStandardMaterial({color:0xFFD54F,roughness:.5});
-    for(var s=-1;s<=1;s+=2){
-      for(var t=-1;t<=1;t+=2){
-        var tip=new THREE.Mesh(new THREE.BoxGeometry(.06,.2,.08),tipMat);
-        tip.position.set(s*1.2,t*.16,.25);playerMesh.add(tip);
+    function onModelLoaded(key, gltf){
+      models[key] = gltf.scene;
+      modelsToLoad--;
+      menuText.textContent = '加载中... ' + (3-modelsToLoad) + '/3';
+      if(modelsToLoad <= 0){
+        setupGame(models);
       }
     }
 
-    // Horizontal stabilizer (tail wings)
-    var tailMat=new THREE.MeshStandardMaterial({color:wingC,roughness:.4});
-    for(var s=-1;s<=1;s+=2){
-      var tWing=new THREE.Mesh(new THREE.BoxGeometry(.55,.03,.18),tailMat);
-      tWing.position.set(s*.3,0,-.9);playerMesh.add(tWing);
-    }
+    loader.load('models/Jet.glb', function(g){onModelLoaded('jet',g)}, null, function(){modelsToLoad--;if(modelsToLoad<=0)setupGame(models)});
+    loader.load('models/Airplane.glb', function(g){onModelLoaded('airplane',g)}, null, function(){modelsToLoad--;if(modelsToLoad<=0)setupGame(models)});
+    loader.load('models/Airship.glb', function(g){onModelLoaded('airship',g)}, null, function(){modelsToLoad--;if(modelsToLoad<=0)setupGame(models)});
 
-    // Vertical stabilizer (tail fin)
-    var vFin=new THREE.Mesh(new THREE.BoxGeometry(.04,.38,.25).translate(0,.19,0),bodyMat);
-    vFin.position.set(0,0,-.9);playerMesh.add(vFin);
-
-    // Cockpit (glass dome)
-    var cMat=new THREE.MeshStandardMaterial({color:glassC,transparent:true,opacity:.7,roughness:.1,metalness:.2});
-    var cGeo=new THREE.SphereGeometry(.2,12,8,0,Math.PI*2,0,Math.PI/2);
-    var cockpit=new THREE.Mesh(cGeo,cMat);
-    cockpit.position.set(0,.16,.4);cockpit.scale.set(1,.45,.85);playerMesh.add(cockpit);
-
-    // Engine exhaust
-    var exMat=new THREE.MeshStandardMaterial({color:0x444444});
-    var exhaust=new THREE.Mesh(new THREE.CylinderGeometry(.08,.1,.2,8),exMat);
-    exhaust.position.set(0,0,-1.1);playerMesh.add(exhaust);
-
-    // Propeller
-    var propGroup=new THREE.Group();
-    var propMat=new THREE.MeshStandardMaterial({color:0x666666,roughness:.6});
-    for(var i=0;i<2;i++){
-      var blade=new THREE.Mesh(new THREE.BoxGeometry(.05,.5,.08),propMat);
-      blade.position.set(0,i===0?.25:-.25,0);propGroup.add(blade);
-    }
-    var hub=new THREE.Mesh(new THREE.SphereGeometry(.06,8,8),new THREE.MeshStandardMaterial({color:0x333333}));
-    propGroup.add(hub);
-    propGroup.position.set(0,0,1.55);playerMesh.add(propGroup);
-
-    // Landing gear (cute tiny wheels)
-    var wheelMat=new THREE.MeshStandardMaterial({color:0x222222});
-    for(var s=-1;s<=1;s+=2){
-      for(var z=-.6;z<=.4;z+=1){
-        var wh=new THREE.Mesh(new THREE.SphereGeometry(.07,6,6).scale(1,.5,1),wheelMat);
-        wh.position.set(s*.22,-.18,z);playerMesh.add(wh);
+    function setupGame(m){
+      // Check loading result
+      if(!m.jet && !m.airplane && !m.airship){
+        errorEl.style.display='block';errorEl.textContent='模型加载失败，请刷新重试';return;
       }
+
+      // Fallback: if any model failed, use available ones
+      var jetModel = m.jet || createFallbackJet();
+      var airplaneModel = m.airplane || createFallbackPlane();
+      var airshipModel = m.airship || createFallbackElite();
+
+      // Store models globally for enemy spawning
+      window._jetModel = jetModel;
+      window._airplaneModel = airplaneModel;
+      window._airshipModel = airshipModel;
+
+      // Setup player from jet model
+      playerMesh = jetModel.clone();
+      playerMesh.scale.set(.15,.15,.15);
+      playerMesh.rotation.y = Math.PI;
+      playerMesh.position.set(0,0,0);
+      playerMesh.traverse(function(c){if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
+      scene.add(playerMesh);
+
+      clock = new THREE.Clock();
+      updateHUD();
+      menuText.textContent = '或按 SPACE';
+      document.getElementById('btnStart').disabled = false;
+      document.getElementById('btnStart').textContent = '🎮 开始游戏';
+      requestAnimationFrame(loop);
+      console.log('✈️ 3D Plane Shooter READY with 3D models');
     }
 
-    // Rotate to face -Z (toward enemies)
-    playerMesh.rotation.y=Math.PI;
-    playerMesh.position.set(0,0,0);
-    playerMesh.castShadow=true;
-    scene.add(playerMesh);
-
-    clock = new THREE.Clock();
-    updateHUD();
-    requestAnimationFrame(loop);
-    console.log('✈️ 3D Plane Shooter READY');
+    // Fallback models (simplified procedural)
+    function createFallbackJet(){
+      var g=new THREE.Group();
+      var m=new THREE.MeshStandardMaterial({color:0x4488ff,roughness:.3});
+      g.add(new THREE.Mesh(new THREE.ConeGeometry(.3,.6,8).rotateX(-Math.PI/2),m));
+      g.add(new THREE.Mesh(new THREE.BoxGeometry(1.5,.05,.4),new THREE.MeshStandardMaterial({color:0x3377dd})).position.set(0,0,.1));
+      g.position.set(0,0,0);g.rotation.y=Math.PI;return g;
+    }
+    function createFallbackPlane(){
+      var g=new THREE.Group();
+      var m=new THREE.MeshStandardMaterial({color:0xE53935,roughness:.4});
+      g.add(new THREE.Mesh(new THREE.ConeGeometry(.25,.3,8).rotateX(-Math.PI/2),m));
+      g.rotation.x=Math.PI;return g;
+    }
+    function createFallbackElite(){
+      var g=new THREE.Group();
+      var m=new THREE.MeshStandardMaterial({color:0x8B2252,roughness:.4});
+      g.add(new THREE.Mesh(new THREE.BoxGeometry(.6,.08,.5),m));
+      g.rotation.x=Math.PI;return g;
+    }
   })();
 }
 
 // ============ GAME OBJECTS ============
 function makeEnemy(elite){
-  var g=new THREE.Group();
-  if(elite){
-    var bm=new THREE.MeshStandardMaterial({color:0x8B2252,roughness:.4});
-    g.add(new THREE.Mesh(new THREE.ConeGeometry(.5,.5,10).rotateX(Math.PI/2),bm).position.set(0,0,-1.2));
-    g.add(new THREE.Mesh(new THREE.BoxGeometry(.6,.06,.5,8),bm).position.set(0,0,-.3));
-    g.add(new THREE.Mesh(new THREE.BoxGeometry(2.4,.06,.6),new THREE.MeshStandardMaterial({color:0x6B1540,roughness:.5})));
-    var am=new THREE.MeshStandardMaterial({color:0xFF4444,emissive:0xFF4444,emissiveIntensity:.3});
-    g.add(new THREE.Mesh(new THREE.BoxGeometry(.3,.04,.1),am).position.set(1.3,0,0));
-    g.add(new THREE.Mesh(new THREE.BoxGeometry(.3,.04,.1),am).position.set(-1.3,0,0));
-  }else{
-    var bm2=new THREE.MeshStandardMaterial({color:0xE53935,roughness:.4});
-    g.add(new THREE.Mesh(new THREE.ConeGeometry(.25,.3,10).rotateX(Math.PI/2),bm2).position.set(0,0,-.7));
-    g.add(new THREE.Mesh(new THREE.CylinderGeometry(.25,.3,1.2,8).rotateX(Math.PI/2),bm2));
-    g.add(new THREE.Mesh(new THREE.BoxGeometry(1.2,.04,.3),new THREE.MeshStandardMaterial({color:0xC62828})));
+  var src = elite ? window._airshipModel : window._airplaneModel;
+  if(!src){
+    // Fallback
+    var g=new THREE.Group();
+    var m=new THREE.MeshStandardMaterial({color:elite?0x8B2252:0xE53935,roughness:.4});
+    g.add(new THREE.Mesh(new THREE.ConeGeometry(elite?.5:.25,elite?.6:.3,8).rotateX(-Math.PI/2),m));
+    g.rotation.x=Math.PI;return g;
   }
+  var g=src.clone();
+  g.traverse(function(c){if(c.isMesh){c.castShadow=true;}});
+  if(elite) g.scale.set(.06,.06,.06);
+  else g.scale.set(.01,.01,.01);
   g.rotation.x=Math.PI;
   return g;
 }
@@ -371,9 +350,8 @@ function loop(){
   if(state===STATE.MENU){
     camera.position.lerp(new THREE.Vector3(Math.sin(elapsed*.3)*3,6+Math.sin(elapsed*.2)*.5,14),.03);
     camera.lookAt(0,0,-2);
-    // idle propeller
-    var p0=playerMesh.children[playerMesh.children.length-1];
-    if(p0)p0.rotation.z+=dt*60;
+    // idle animation
+    playerMesh.position.y += Math.sin(elapsed*4)*.003;
     renderer.render(scene,camera);
     return;
   }
@@ -405,8 +383,7 @@ function loop(){
   // Player animation
   playerMesh.rotation.z=lerp(playerMesh.rotation.z,-mx*.3,.1);
   playerMesh.rotation.x=lerp(playerMesh.rotation.x,-my*.12,.1);
-  var prop=playerMesh.children[playerMesh.children.length-1];
-  if(prop)prop.rotation.z+=dt*60;
+  playerMesh.position.y+=Math.sin(elapsed*4)*.003;
 
   // Invincibility
   if(invincible){
