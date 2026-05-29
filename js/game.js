@@ -81,6 +81,10 @@ function initScene() {
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
+
+    // Focus renderer canvas so keyboard events work
+    renderer.domElement.setAttribute('tabindex', '0');
+    renderer.domElement.focus();
 }
 
 // ============================================================
@@ -1233,9 +1237,6 @@ class Game {
 // ============================================================
 // INPUT HANDLING
 // ============================================================
-// Focus the game container on load so keyboard events work
-renderer.domElement.setAttribute('tabindex', '0');
-renderer.domElement.focus();
 
 // Listen on window for best cross-browser support
 function handleKeyDown(e) {
