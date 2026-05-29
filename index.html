@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✈️ 3D Plane Shooter</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Three.js Canvas Container -->
+    <div id="game-container"></div>
+
+    <!-- Menu Screen -->
+    <div id="menu-screen" class="screen">
+        <div class="title-container">
+            <h1 class="game-title">✈️ 天空射手</h1>
+            <p class="subtitle">3D Plane Shooter</p>
+        </div>
+        <div class="menu-actions">
+            <p class="start-hint">按 <kbd>SPACE</kbd> 开始游戏</p>
+            <div class="controls-info">
+                <p><kbd>W A S D</kbd> 移动飞机</p>
+                <p><kbd>SPACE</kbd> 射击</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game HUD -->
+    <div id="hud" class="hidden">
+        <div class="hud-top">
+            <div class="hud-left">
+                <div class="score-display">
+                    <span class="score-label">分数</span>
+                    <span id="score-value">0</span>
+                </div>
+            </div>
+            <div class="hud-center">
+                <div class="fire-level">
+                    <span class="fire-label">火力</span>
+                    <span id="fire-value" class="fire-stars">★</span>
+                </div>
+            </div>
+            <div class="hud-right">
+                <div class="lives-display">
+                    <span id="lives-value">❤️❤️❤️</span>
+                </div>
+            </div>
+        </div>
+        <div class="hud-bottom">
+            <div class="combo-display hidden" id="combo-display">
+                <span class="combo-text">🔥 <span id="combo-value">0</span>连击</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameover-screen" class="screen hidden">
+        <div class="gameover-content">
+            <h1 class="gameover-title">💥 游戏结束</h1>
+            <div class="final-score">
+                <p class="final-score-label">最终得分</p>
+                <p id="final-score-value" class="final-score-value">0</p>
+            </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">击杀数</span>
+                    <span id="kill-count" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">存活时间</span>
+                    <span id="survival-time" class="stat-value">0s</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">最高火力</span>
+                    <span id="max-fire-level" class="stat-value">Lv.1</span>
+                </div>
+            </div>
+            <p class="restart-hint">按 <kbd>SPACE</kbd> 再来一局</p>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js"
+        }
+    }
+    </script>
+    <script type="module" src="js/game.js"></script>
+</body>
+</html>
