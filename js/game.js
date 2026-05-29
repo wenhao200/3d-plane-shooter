@@ -1274,6 +1274,9 @@ function setupInput() {
             game.start();
         }
     }
+
+    // Expose for HTML onclick
+    window._startGame = tryStartGame;
 }
 
 // ============================================================
