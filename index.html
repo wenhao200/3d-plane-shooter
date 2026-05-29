@@ -288,13 +288,13 @@ function makeEnemy(elite){
   if(elite){
     // Airship: 176 unit model, scale 0.03
     g.scale.set(.03,.03,.03);
-    // Try: rotation.z = Math.PI to flip if upside-down
-    g.rotation.set(0, Math.PI, Math.PI);
+    // Rotate X 180 to flip upright
+    g.rotation.set(Math.PI, 0, 0);
   }else{
-    // Airplane: 3.77 unit model, scale 0.4
+    // Airplane: 3.77 unit model, scale 0.4  
     g.scale.set(.4,.4,.4);
-    // Try: rotation.y = Math.PI/2 to fix sideways flight
-    g.rotation.set(0, Math.PI/2, 0);
+    // Rotate X 90 to lay flat
+    g.rotation.set(Math.PI/2, 0, 0);
   }
   return g;
 }
