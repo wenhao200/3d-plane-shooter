@@ -287,7 +287,7 @@ function makeEnemy(elite){
   // Different models have different native orientations - fix each
   if(elite){
     g.scale.set(.03,.03,.03);
-    g.rotation.set(Math.PI, Math.PI, 0);      // Airship: roll left 90
+    g.rotation.set(Math.PI, 0, Math.PI/2);    // Airship: Z 90 roll flat
   }else{
     g.scale.set(.4,.4,.4);
     g.rotation.set(-Math.PI/2, Math.PI/2, 0); // Airplane: pitch down 90
