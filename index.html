@@ -194,21 +194,86 @@ if(typeof THREE==='undefined'){
 
     // Player airplane (cute cartoon style)
     playerMesh = new THREE.Group();
-    var bc=0xFF6B35,wc=0xFF9A3C;
-    var bd=new THREE.CylinderGeometry(.35,.4,1.6,10);bd.rotateX(Math.PI/2);
-    playerMesh.add(new THREE.Mesh(bd,new THREE.MeshStandardMaterial({color:bc,roughness:.3})));
-    playerMesh.add(new THREE.Mesh(new THREE.BoxGeometry(1.8,.06,.5),new THREE.MeshStandardMaterial({color:wc,roughness:.4})).position.set(0,0,.2));
-    playerMesh.add(new THREE.Mesh(new THREE.BoxGeometry(.5,.03,.15),new THREE.MeshStandardMaterial({color:wc,roughness:.4})).position.set(0,0,-.75));
-    playerMesh.add(new THREE.Mesh(new THREE.BoxGeometry(.03,.3,.2),new THREE.MeshStandardMaterial({color:bc,roughness:.3})).position.set(0,.15,-.75));
-    // cockpit
-    var ck=new THREE.Mesh(new THREE.SphereGeometry(.16,8,6,0,Math.PI*2,0,Math.PI/2),new THREE.MeshStandardMaterial({color:0x4FC3F7,transparent:true,opacity:.65}));
-    ck.position.set(0,.12,.35);ck.scale.set(1,.5,.8);playerMesh.add(ck);
-    // propeller
-    var pr=new THREE.Group();
-    var pm=new THREE.MeshStandardMaterial({color:0x555555});
-    pr.add(new THREE.Mesh(new THREE.BoxGeometry(.04,.35,.08),pm).position.set(0,.17,0));
-    pr.add(new THREE.Mesh(new THREE.BoxGeometry(.04,.35,.08),pm).position.set(0,-.17,0));
-    pr.position.set(0,0,1.2);playerMesh.add(pr);
+    var bodyC=0xFF6B35, wingC=0xFFAD33, bellyC=0xFFE082, glassC=0x81D4FA;
+    var bodyMat=new THREE.MeshStandardMaterial({color:bodyC,roughness:.25,metalness:.1});
+    var wingMat=new THREE.MeshStandardMaterial({color:wingC,roughness:.35,metalness:.05});
+    var bellyMat=new THREE.MeshStandardMaterial({color:bellyC,roughness:.4});
+
+    // Fuselage - smooth rounded body
+    var fuseGeo=new THREE.CylinderGeometry(.28,.4,2.0,12).rotateX(Math.PI/2);
+    playerMesh.add(new THREE.Mesh(fuseGeo,bodyMat));
+
+    // Belly (lighter color)
+    var bellyGeo=new THREE.CylinderGeometry(.26,.36,1.4,8,1,false,0,Math.PI).rotateX(Math.PI/2).rotateZ(Math.PI/2);
+    var belly=new THREE.Mesh(bellyGeo,bellyMat);
+    belly.position.set(0,-.22,0);playerMesh.add(belly);
+
+    // Nose cone
+    var nose=new THREE.Mesh(new THREE.ConeGeometry(.28,.5,12).rotateX(Math.PI/2),bodyMat);
+    nose.position.set(0,0,1.2);playerMesh.add(nose);
+
+    // Upper wings (swept back)
+    var upWingGeo=new THREE.BoxGeometry(2.4,.05,.6);
+    var upWing=new THREE.Mesh(upWingGeo,wingMat);
+    upWing.position.set(0,.15,.25);upWing.rotation.z=-.08;playerMesh.add(upWing);
+
+    // Lower wings
+    var loWing=new THREE.Mesh(upWingGeo,wingMat);
+    loWing.position.set(0,-.15,.25);loWing.rotation.z=.08;playerMesh.add(loWing);
+
+    // Wing tips (decorative)
+    var tipMat=new THREE.MeshStandardMaterial({color:0xFFD54F,roughness:.5});
+    for(var s=-1;s<=1;s+=2){
+      for(var t=-1;t<=1;t+=2){
+        var tip=new THREE.Mesh(new THREE.BoxGeometry(.06,.2,.08),tipMat);
+        tip.position.set(s*1.2,t*.16,.25);playerMesh.add(tip);
+      }
+    }
+
+    // Horizontal stabilizer (tail wings)
+    var tailMat=new THREE.MeshStandardMaterial({color:wingC,roughness:.4});
+    for(var s=-1;s<=1;s+=2){
+      var tWing=new THREE.Mesh(new THREE.BoxGeometry(.55,.03,.18),tailMat);
+      tWing.position.set(s*.3,0,-.9);playerMesh.add(tWing);
+    }
+
+    // Vertical stabilizer (tail fin)
+    var vFin=new THREE.Mesh(new THREE.BoxGeometry(.04,.38,.25).translate(0,.19,0),bodyMat);
+    vFin.position.set(0,0,-.9);playerMesh.add(vFin);
+
+    // Cockpit (glass dome)
+    var cMat=new THREE.MeshStandardMaterial({color:glassC,transparent:true,opacity:.7,roughness:.1,metalness:.2});
+    var cGeo=new THREE.SphereGeometry(.2,12,8,0,Math.PI*2,0,Math.PI/2);
+    var cockpit=new THREE.Mesh(cGeo,cMat);
+    cockpit.position.set(0,.16,.4);cockpit.scale.set(1,.45,.85);playerMesh.add(cockpit);
+
+    // Engine exhaust
+    var exMat=new THREE.MeshStandardMaterial({color:0x444444});
+    var exhaust=new THREE.Mesh(new THREE.CylinderGeometry(.08,.1,.2,8),exMat);
+    exhaust.position.set(0,0,-1.1);playerMesh.add(exhaust);
+
+    // Propeller
+    var propGroup=new THREE.Group();
+    var propMat=new THREE.MeshStandardMaterial({color:0x666666,roughness:.6});
+    for(var i=0;i<2;i++){
+      var blade=new THREE.Mesh(new THREE.BoxGeometry(.05,.5,.08),propMat);
+      blade.position.set(0,i===0?.25:-.25,0);propGroup.add(blade);
+    }
+    var hub=new THREE.Mesh(new THREE.SphereGeometry(.06,8,8),new THREE.MeshStandardMaterial({color:0x333333}));
+    propGroup.add(hub);
+    propGroup.position.set(0,0,1.55);playerMesh.add(propGroup);
+
+    // Landing gear (cute tiny wheels)
+    var wheelMat=new THREE.MeshStandardMaterial({color:0x222222});
+    for(var s=-1;s<=1;s+=2){
+      for(var z=-.6;z<=.4;z+=1){
+        var wh=new THREE.Mesh(new THREE.SphereGeometry(.07,6,6).scale(1,.5,1),wheelMat);
+        wh.position.set(s*.22,-.18,z);playerMesh.add(wh);
+      }
+    }
+
+    // Rotate to face -Z (toward enemies)
+    playerMesh.rotation.y=Math.PI;
     playerMesh.position.set(0,0,0);
     playerMesh.castShadow=true;
     scene.add(playerMesh);
@@ -244,7 +309,7 @@ function makeEnemy(elite){
 function addBullet(x,y,z,dx,dy){
   var m=new THREE.Mesh(new THREE.SphereGeometry(.07,6,6),new THREE.MeshBasicMaterial({color:0xffee44}));
   m.position.set(x,y,z);scene.add(m);
-  bullets.push({mesh:m,vx:dx,vy:dy,vz:35,life:0});
+  bullets.push({mesh:m,vx:dx,vy:dy,vz:-35,life:0});
 }
 
 function addEBullet(x,y,z,tx,ty){
@@ -356,9 +421,9 @@ function loop(){
     if(now-lastShot>150){
       lastShot=now;
       var pp2=playerMesh.position;
-      if(fireLvl===1){addBullet(pp2.x,pp2.y,pp2.z+.8,0,0)}
-      else if(fireLvl===2){addBullet(pp2.x-.25,pp2.y,pp2.z+.8,-.3,0);addBullet(pp2.x+.25,pp2.y,pp2.z+.8,.3,0)}
-      else{addBullet(pp2.x,pp2.y,pp2.z+.8,0,0);addBullet(pp2.x-.3,pp2.y-.1,pp2.z+.8,-.3,-.1);addBullet(pp2.x+.3,pp2.y+.1,pp2.z+.8,.3,.1)}
+      if(fireLvl===1){addBullet(pp2.x,pp2.y,pp2.z-1,0,0)}
+      else if(fireLvl===2){addBullet(pp2.x-.25,pp2.y,pp2.z-1,-.3,0);addBullet(pp2.x+.25,pp2.y,pp2.z-1,.3,0)}
+      else{addBullet(pp2.x,pp2.y,pp2.z-1,0,0);addBullet(pp2.x-.3,pp2.y-.1,pp2.z-1,-.3,-.1);addBullet(pp2.x+.3,pp2.y+.1,pp2.z-1,.3,.1)}
     }
   }
 
@@ -389,7 +454,7 @@ function loop(){
   var updateArr=function(arr,mlife,zmax){
     for(var i=arr.length-1;i>=0;i--){
       var b=arr[i];b.mesh.position.x+=b.vx*dt;b.mesh.position.y+=b.vy*dt;b.mesh.position.z+=b.vz*dt;b.life+=dt;
-      if(b.life>mlife||b.mesh.position.z>zmax){scene.remove(b.mesh);arr.splice(i,1)}
+      if(b.life>mlife||b.mesh.position.z<-25){scene.remove(b.mesh);arr.splice(i,1)}
     }
   };
   updateArr(bullets,2.5,25);
