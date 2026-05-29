@@ -1317,15 +1317,30 @@ function animate() {
 // ============================================================
 // INIT
 // ============================================================
-initScene();
-createStars();
-initClouds(20);
-game = new Game();
-showMenu();
+function boot() {
+    try {
+        initScene();
+        createStars();
+        initClouds(20);
+        game = new Game();
+        showMenu();
 
-// Start game loop
-animate();
+        // Start game loop
+        animate();
 
-console.log('✈️ 3D Plane Shooter loaded!');
-console.log('🎮 Controls: WASD - Move | SPACE - Shoot');
-console.log('🔥 Collect power-ups to upgrade firepower!');
+        // Log success
+        document.getElementById('menu-screen').style.background = 'rgba(0, 0, 0, 0.35)';
+        console.log('✈️ 3D Plane Shooter loaded!');
+        console.log('🎮 SPACE or Click to start | WASD to move');
+    } catch (err) {
+        console.error('Boot Error:', err);
+        document.body.innerHTML = '<div style="color:white;padding:40px;text-align:center;"><h1>游戏加载失败</h1><p>' + err.message + '</p></div>';
+    }
+}
+
+// Run after DOM ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+} else {
+    boot();
+}
