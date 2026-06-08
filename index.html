@@ -44,6 +44,7 @@ kbd{padding:2px 8px;background:rgba(255,255,255,.15);border:1px solid rgba(255,2
 
 <div id="hud" class="hidden">
   <div class="hud-item"><span class="hud-label">分数</span><span class="hud-val" id="score">0</span></div>
+  <div class="hud-item"><span class="hud-label">关卡</span><span class="hud-val" id="level-indicator" style="font-size:16px;color:rgba(255,255,255,.8)">关卡 1</span></div>
   <div class="hud-item"><span class="hud-label">火力</span><span class="fire-stars" id="fire">★☆☆</span></div>
   <div class="hud-item"><span class="hud-label">生命</span><span class="hud-val" id="lives">❤️❤️❤️</span></div>
 </div>
@@ -63,8 +64,29 @@ kbd{padding:2px 8px;background:rgba(255,255,255,.15);border:1px solid rgba(255,2
 
 <div id="error"></div>
 
+<!-- 关卡公告 -->
+<div id="level-announce" class="overlay hidden">
+  <h2 id="level-name" style="color:#fff;font-size:48px;text-shadow:0 0 30px rgba(255,200,50,.6);letter-spacing:4px;"></h2>
+  <p id="level-subtitle" style="color:rgba(255,255,255,.7);font-size:24px;margin-top:10px;letter-spacing:6px;"></p>
+</div>
+
+<!-- 关卡消息 -->
+<div id="level-msg" class="hidden" style="position:fixed;bottom:100px;left:50%;transform:translateX(-50%);z-index:15;color:#FFD700;font-size:24px;font-weight:700;text-shadow:0 0 20px rgba(255,215,0,.5);transition:opacity .5s;text-align:center;pointer-events:none;white-space:nowrap;"></div>
+
+<!-- Boss HP 条 -->
+<div id="boss-hp-container" class="hidden" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:5;width:400px;max-width:80vw;">
+  <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+    <span style="color:rgba(255,255,255,.7);font-size:12px;">BOSS</span>
+    <span id="boss-hp-text" style="color:rgba(255,255,255,.7);font-size:12px;">HP</span>
+  </div>
+  <div style="width:100%;height:8px;background:rgba(255,255,255,.2);border-radius:4px;overflow:hidden;">
+    <div id="boss-hp-fill" style="width:100%;height:100%;background:linear-gradient(90deg,#4CAF50,#8BC34A);border-radius:4px;transition:width .3s;"></div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="js/levels.js"></script>
 <script>
 'use strict';
 
@@ -103,6 +125,9 @@ function startGame(){
   playerMesh.visible=true;
   playerMesh.position.set(0,0,0);
   state=STATE.PLAYING;
+  // 启动关卡系统
+  window.useLevelSystem = true;
+  if (typeof LevelManager !== 'undefined') { LevelManager.startGame(); }
   menu.classList.add('hidden');
   gameover.style.display='none';
   hud.classList.remove('hidden');
@@ -239,6 +264,20 @@ if(typeof THREE==='undefined'){
       playerMesh.position.set(0,0,0);
       playerMesh.traverse(function(c){if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
       scene.add(playerMesh);
+
+      // Init level system
+      if (typeof LevelManager !== 'undefined') {
+        LevelManager.init({
+          scene: scene,
+          playerMesh: playerMesh,
+          enemies: enemies,
+          bullets: bullets,
+          eBullets: eBullets,
+          pups: pups,
+          particles: particles,
+          clouds: clouds,
+        });
+      }
 
       clock = new THREE.Clock();
       updateHUD();
@@ -414,27 +453,37 @@ function loop(){
     }
   }
 
-  // Spawn enemies
-  var diff=Math.min(gameTime/120,1);
-  if(elapsed*1000-lastSpawn>(2000-diff*1600)){
-    var elite=Math.random()<.15*(1+diff);
-    var e=makeEnemy(elite);
-    e.position.set(rand(BOUND.xMin+1,BOUND.xMax-1),rand(BOUND.yMin+1,BOUND.yMax-1),rand(-30,-18));
-    scene.add(e);
-    enemies.push({mesh:e,elite:elite,hp:elite?2+Math.floor(diff*3):1,speed:(elite?3:5)+diff*8,st:elite?rand(1.5,3):0,wb:rand(0,Math.PI*2)});
-    lastSpawn=elapsed*1000;
+  // Spawn enemies — 关卡系统优先
+  if (window.useLevelSystem !== false && typeof LevelManager !== 'undefined') {
+    LevelManager.update(dt, elapsed, gameTime, playerMesh.position);
+  } else {
+    // Fallback: RNG 无尽模式
+    var diff=Math.min(gameTime/120,1);
+    if(elapsed*1000-lastSpawn>(2000-diff*1600)){
+      var elite=Math.random()<.15*(1+diff);
+      var e=makeEnemy(elite);
+      e.position.set(rand(BOUND.xMin+1,BOUND.xMax-1),rand(BOUND.yMin+1,BOUND.yMax-1),rand(-30,-18));
+      scene.add(e);
+      enemies.push({mesh:e,elite:elite,hp:elite?2+Math.floor(diff*3):1,speed:(elite?3:5)+diff*8,st:elite?rand(1.5,3):0,wb:rand(0,Math.PI*2)});
+      lastSpawn=elapsed*1000;
+    }
   }
 
   // Update enemies
+  var diff=Math.min(gameTime/120,1);
   for(var i=enemies.length-1;i>=0;i--){
     var en=enemies[i];
-    en.mesh.position.z+=en.speed*dt;
+    // Boss 移动由关卡系统控制，普通敌人才沿 Z 轴飞行
+    if (!en.isBoss) {
+      en.mesh.position.z+=en.speed*dt;
+    }
     if(!en.elite){en.wb+=dt*3;en.mesh.position.x+=Math.sin(en.wb)*dt*.5}
-    if(en.elite){
+    if(en.elite && !en.isBoss){
       en.st-=dt;
       if(en.st<=0&&en.mesh.position.z<-3){addEBullet(en.mesh.position.x,en.mesh.position.y,en.mesh.position.z,playerMesh.position.x,playerMesh.position.y);en.st=rand(1.5,3)*(1-diff*.3)}
     }
-    if(en.mesh.position.z>8){scene.remove(en.mesh);enemies.splice(i,1)}
+    // Boss 不会被移出屏幕
+    if(!en.isBoss && en.mesh.position.z>8){scene.remove(en.mesh);enemies.splice(i,1)}
   }
 
   // Update bullets
@@ -464,16 +513,27 @@ function loop(){
   // Collisions: bullets vs enemies
   for(var bi=bullets.length-1;bi>=0;bi--){
     for(var ei=enemies.length-1;ei>=0;ei--){
-      if(bullets[bi].mesh.position.distanceTo(enemies[ei].mesh.position)<(enemies[ei].elite?1.5:1.0)){
+      var eHitR = enemies[ei].hitRadius || (enemies[ei].elite?1.5:1.0);
+      if(bullets[bi].mesh.position.distanceTo(enemies[ei].mesh.position)<eHitR){
         scene.remove(bullets[bi].mesh);bullets.splice(bi,1);
         enemies[ei].hp--;
         if(enemies[ei].hp<=0){
           var epp=enemies[ei].mesh.position;
-          explodeAt(epp,enemies[ei].elite?30:15);
+          var isBoss=enemies[ei].isBoss;
           var wasElite=enemies[ei].elite;
+          explodeAt(epp,isBoss?40:(wasElite?30:15));
           scene.remove(enemies[ei].mesh);enemies.splice(ei,1);
-          if(Math.random()<.25){addPowerup(epp.x,epp.y,epp.z,Math.random()<.6?'fire':'health')}
-          kills++;score+=wasElite?50:10;maxFire=Math.max(maxFire,fireLvl);
+          if(isBoss){
+            score+=200;
+            addPowerup(epp.x,epp.y,epp.z,'fire');
+            addPowerup(epp.x-1,epp.y-0.5,epp.z,'health');
+            addPowerup(epp.x+1,epp.y+0.5,epp.z,'health');
+            kills++;
+          }else{
+            if(Math.random()<.25){addPowerup(epp.x,epp.y,epp.z,Math.random()<.6?'fire':'health')}
+            kills++;score+=wasElite?50:10;
+          }
+          maxFire=Math.max(maxFire,fireLvl);
         }
         break;
       }
@@ -494,7 +554,8 @@ function loop(){
   // Collision: enemies vs player
   if(!invincible){
     for(var i=enemies.length-1;i>=0;i--){
-      if(enemies[i].mesh.position.distanceTo(playerMesh.position)<(enemies[i].elite?1:.7)){
+      var eHitR2 = enemies[i].hitRadius || (enemies[i].elite?1:.7);
+      if(enemies[i].mesh.position.distanceTo(playerMesh.position)<eHitR2){
         explodeAt(enemies[i].mesh.position,10);
         scene.remove(enemies[i].mesh);enemies.splice(i,1);
         invincible=true;invTimer=2000;lives--;
